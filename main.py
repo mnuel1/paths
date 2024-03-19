@@ -1,40 +1,33 @@
 import numpy as np
 import cv2
-import open3d as o3d
+# import open3d as o3d
 import base64
 import matplotlib.pyplot as plt
 import heapq
 
 def generate_heightmap(image_path, scale_factor=10, downsample_factor=4):
     # Load the image
-    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    img = cv2.imread(image_path)
+    image_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # Get dimensions of the image
-    height, width, _ = img.shape
 
     # Scale the z-coordinate based on image intensity
     z = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) / 255 * scale_factor
 
-    return z, img
-def is_user(color, threshold=0.1, red=0.9):  
-    r, g, b = color    
-    return r > red and g < threshold and b < threshold
+    return z, image_rgb
 
-def is_door(color, threshold=0.1, green=0.9):  
-    r, g, b = color    
-    return r < threshold and g > green and b < threshold
-
-def is_obstacles(color, threshold=0.1, blue=0.9): 
+def is_obstacles(color, threshold=0.1, red=0.9): 
     r, g, b = color
-    return r < threshold and g < threshold and b > blue
+    return r > red and g < threshold and b < threshold
 
 def is_path(color, threshold=0.1): 
     r, g, b = color
     return r < threshold and g < threshold and b < threshold
 
-def is_corner(color, threshold=0.1, green=0.7, blue=0.8):   
+def is_corner(color, threshold=0.1, green=0.8, red=0.8):   
     r, g, b = color
-    return r < threshold and g > green and b > blue
+    return r > red and g > green and b < threshold
+
 def dijkstra(graph, start, end):
     distances = {node: float('inf') for node in graph}
     path_distances = [65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 46.5, 46.5, 46.5, 46.5]
@@ -73,15 +66,11 @@ def dijkstra(graph, start, end):
     return float('inf'), None, None
 
 
-def main(start_node, end_node):
-    # image path
+def get_graph():
     image_path = 'final2.png'
 
-    # z for the  3d dimensions
-    # elementImage the image read by cv2
     z, elementImage = generate_heightmap(image_path)
 
-    # Initialize lists to store vertices and edges
     vertices = []
     edges = []
 
@@ -288,9 +277,21 @@ def main(start_node, end_node):
             new_value.update(item)
         new_data[key] = new_value
 
-    # print(new_data)
+    return new_data, connections
+    
+def get_shortest_path_dijkstra(start_node, end_node):
+    new_data = {
+            "A": { "B": 1, "C": 2, "D": 0},
+            "B": { "A": 1, "D": 4, "E": 3 }, "C": { "A": 2, "F": 5 },
+            "D": { "A": 0, "B": 4, "E": 7, "F": 6, "G": 8 },
+            "E": { "B": 3, "D": 7, "H": 9 },
+            "F": { "C": 5, "D": 6, "G": 10 },
+            "G": { "D": 8, "F": 10, "H": 11 },
+            "H": { "E": 9, "G": 11 }
+        }
+    
     shortest_distance, shortest_path, distances = dijkstra(new_data, start_node, end_node)
-    # print(distances)
+
     # if shortest_path:
     #     print(f"Shortest distance from node {start_node} to node {end_node}: {shortest_distance}")
     #     print("Shortest path:", shortest_path)
@@ -299,11 +300,11 @@ def main(start_node, end_node):
     #     print(f"There is no path from node {start_node} to node {end_node}")
   
     # Loop through indices specified in the distances list
-    for idx in distances:
-        print(idx)
-        connected_groups = connections[idx]  # Assuming connections is defined somewhere
-        for connected_group in connected_groups:
-            elementImage[connected_group[1], connected_group[0]] = [255, 0, 0]  # Red color for vertices
+    # for idx in distances:
+    #     print(idx)
+    #     connected_groups = connections[idx]  # Assuming connections is defined somewhere
+    #     for connected_group in connected_groups:
+    #         elementImage[connected_group[1], connected_group[0]] = [255, 0, 0]  # Red color for vertices
    
     # # Create a window and display the image in full screen mode
     # cv2.namedWindow('Image with vertices highlighted', cv2.WINDOW_NORMAL)
@@ -315,11 +316,13 @@ def main(start_node, end_node):
     # Get the encoded image
             
     # Your existing code to generate the encoded image...
-    _, buffer = cv2.imencode('.png', elementImage)
-    encoded_image_bytes = base64.b64encode(buffer)
-    return shortest_path, shortest_distance, encoded_image_bytes
+    # _, buffer = cv2.imencode('.png', elementImage)
+    # encoded_image_bytes = base64.b64encode(buffer)
+    # return shortest_path, shortest_distance, encoded_image_bytes
     # return None
-# main(start_node='A',end_node='B')
+    # plt.imshow(elementImage)
+    # plt.show()
+# get_shortest_path(start_node='A',end_node='B')
     #  conn_average_x = []
     # conn_average_y = []
   

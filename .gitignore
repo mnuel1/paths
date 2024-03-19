@@ -1,3 +1,11 @@
-./results
+results/
 Lib/
-# ./scripts
+Scripts/
+Include/
+share/
+etc/
+temp.py
+app.py
+run.ps1
+setup.ps1
+pyvenv.cfg
