@@ -1,9 +1,0 @@
-run this command
-python -m venv myenv
-
-
-open the folder in terminal/cmd
-then copy and paste this command
-pip install -r requirements.txt
-
-

@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 # import open3d as o3d
+import json
 import base64
 import matplotlib.pyplot as plt
 import heapq
@@ -10,17 +11,14 @@ def generate_heightmap(image_path, scale_factor=10, downsample_factor=4):
     img = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-
-    # Scale the z-coordinate based on image intensity
-    z = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) / 255 * scale_factor
-
-    return z, image_rgb
+    height, width, _ = image_rgb.shape
+    return height, width, image_rgb
 
 def is_obstacles(color, threshold=0.1, red=0.9): 
     r, g, b = color
     return r > red and g < threshold and b < threshold
 
-def is_path(color, threshold=0.1): 
+def is_path(color, threshold=0.3): 
     r, g, b = color
     return r < threshold and g < threshold and b < threshold
 
@@ -67,22 +65,21 @@ def dijkstra(graph, start, end):
 
 
 def get_graph():
-    image_path = 'final2.png'
+    image_path = 'final4.png'
 
-    z, elementImage = generate_heightmap(image_path)
+    height, width, elementImage = generate_heightmap(image_path)
 
     vertices = []
     edges = []
 
     # Trace the color and identify vertices, edges and obstacles
-    for i in range(z.shape[0]):
-        for j in range(z.shape[1]):
+    for i in range(width):
+        for j in range(height):
             elementsColor = elementImage[i, j] / 255
 
             if is_path(elementsColor):
                 # This is an edge
-                edges.append((i, j))
-            
+                edges.append((i, j))                    
             elif is_obstacles(elementsColor):      
                 # This is an obstacle
                 pass        
@@ -93,7 +90,8 @@ def get_graph():
             else: 
                 # This is not part of any special element
                 pass
-    
+        
+   
     # sort the coordinates vertices for easier grouping vertex
     sorted_vertices = sorted(vertices, key=lambda vertex: (vertex[0]))
 
@@ -117,19 +115,19 @@ def get_graph():
                         group_prev_vertex = group[-1]                                                 
                         if abs(vertex[0] - group_prev_vertex[0]) <= 1:                                                 
                             if vertex[1] != group_prev_vertex[1]:                                                                                    
-                                if vertex[1] - group_prev_vertex[1] <= 400:                                                                
+                                if vertex[1] - group_prev_vertex[1] <= 200:                                                                
                                     group.append(vertex)
                                 
                     grouped_vertices.append(current_group)            
                     current_group = [vertex]                                    
             elif vertex[0] != prev_vertex[0] and abs(vertex[0] - prev_vertex[0] <= 1):
-                if abs(vertex[1] - prev_vertex[1]) > 400:
+                if abs(vertex[1] - prev_vertex[1]) > 200:
                     
                     for group in grouped_vertices:
                         group_prev_vertex = group[-1]                                                 
                         if abs(vertex[0] - group_prev_vertex[0]) <= 1:                                                 
                             if vertex[1] != group_prev_vertex[1]:                                                                                    
-                                if abs(vertex[1] - group_prev_vertex[1]) <= 400:                                                                
+                                if abs(vertex[1] - group_prev_vertex[1]) <= 200:                                                                
                                     group.append(vertex)
                                     break
                 else:
@@ -177,7 +175,7 @@ def get_graph():
             # checks right diagonal
             if letters[i] == 'A' or letters[i] == 'B':
                 diagonal_y = average_y[i]
-                for j in range(average_x[i] + 1, z.shape[1]):
+                for j in range(average_x[i] + 1, height):
                     connection.append([diagonal_y, j])            
                     for number in range(len(average_x)):                                
                         if average_x[number] == j and abs(diagonal_y - average_y[number]) <= 400:                                                                                
@@ -222,7 +220,7 @@ def get_graph():
             flag = 0
 
             # checks right 
-            for j in range(average_y[i] + 1, z.shape[0]):              
+            for j in range(average_y[i] + 1, width):              
                 connection.append([j, average_x[i]])            
                 for number in range(len(average_x)):                                
                     if average_y[number] == j and abs(average_x[i] - average_x[number]) <= 10:                        
@@ -245,7 +243,7 @@ def get_graph():
             flag = 0
 
             # check vertical connect
-            for j in range(average_x[i] + 1, z.shape[1]):            
+            for j in range(average_x[i] + 1, height):            
                 for number in range(len(average_x)):
                     connection.append([average_y[i], j])        
                     if average_x[number] == j and abs(average_y[i] - average_y[number]) <= 10:
@@ -268,7 +266,11 @@ def get_graph():
         return connections, graph
 
     connections, graph = find_connections(average_x, average_y)
-   
+    # for connection in connections:        
+    #     for node in connection:
+    #         elementImage[node[1], node[0]] = [0, 255, 0]  # Green color for edges
+
+
     # separate it properly
     new_data = {}
     for key, value in graph.items():
@@ -276,52 +278,52 @@ def get_graph():
         for item in value:
             new_value.update(item)
         new_data[key] = new_value
+    plt.imshow(elementImage)
+    plt.show()
+
 
     return new_data, connections
-    
-def get_shortest_path_dijkstra(start_node, end_node):
-    new_data = {
-            "A": { "B": 1, "C": 2, "D": 0},
-            "B": { "A": 1, "D": 4, "E": 3 }, "C": { "A": 2, "F": 5 },
-            "D": { "A": 0, "B": 4, "E": 7, "F": 6, "G": 8 },
-            "E": { "B": 3, "D": 7, "H": 9 },
-            "F": { "C": 5, "D": 6, "G": 10 },
-            "G": { "D": 8, "F": 10, "H": 11 },
-            "H": { "E": 9, "G": 11 }
-        }
-    
-    shortest_distance, shortest_path, distances = dijkstra(new_data, start_node, end_node)
 
-    # if shortest_path:
-    #     print(f"Shortest distance from node {start_node} to node {end_node}: {shortest_distance}")
-    #     print("Shortest path:", shortest_path)
-        
-    # else:
-    #     print(f"There is no path from node {start_node} to node {end_node}")
-  
+get_graph()
+def get_shortest_path_dijkstra(start_node, end_node, graph, paths):
+    # image_path = 'final4.png'
+    # height, width, elementImage = generate_heightmap(image_path)
+    shortest_distance, shortest_path, distances = dijkstra(graph, start_node, end_node)
+    
+    path = []
     # Loop through indices specified in the distances list
-    # for idx in distances:
-    #     print(idx)
-    #     connected_groups = connections[idx]  # Assuming connections is defined somewhere
-    #     for connected_group in connected_groups:
-    #         elementImage[connected_group[1], connected_group[0]] = [255, 0, 0]  # Red color for vertices
-   
-    # # Create a window and display the image in full screen mode
-    # cv2.namedWindow('Image with vertices highlighted', cv2.WINDOW_NORMAL)
- 
-    # # Display the image with vertices highlighted
-    # cv2.imshow('Image with vertices highlighted', elementImage)
-    # cv2.waitKey(0)  # Wait for any key press
-    # cv2.destroyAllWindows()
-    # Get the encoded image
-            
-    # Your existing code to generate the encoded image...
-    # _, buffer = cv2.imencode('.png', elementImage)
-    # encoded_image_bytes = base64.b64encode(buffer)
-    # return shortest_path, shortest_distance, encoded_image_bytes
-    # return None
+    for idx in distances:
+        connected_groups = paths[idx]  # Assuming connections is defined somewhere
+        for connected_group in connected_groups:
+            path.append(connected_group)
+  
     # plt.imshow(elementImage)
     # plt.show()
+    return shortest_path, shortest_distance, path
+
+
+# new_data = {
+#             "A": { "B": 1, "C": 2, "D": 0},
+#             "B": { "A": 1, "D": 4, "E": 3 }, "C": { "A": 2, "F": 5 },
+#             "D": { "A": 0, "B": 4, "E": 7, "F": 6, "G": 8 },
+#             "E": { "B": 3, "D": 7, "H": 9 },
+#             "F": { "C": 5, "D": 6, "G": 10 },
+#             "G": { "D": 8, "F": 10, "H": 11 },
+#             "H": { "E": 9, "G": 11 }
+#         }
+    
+#  # Create a window and display the image in full screen mode
+#     cv2.namedWindow('Image with vertices highlighted', cv2.WINDOW_NORMAL)
+ 
+#     # Display the image with vertices highlighted
+#     cv2.imshow('Image with vertices highlighted', elementImage)
+#     cv2.waitKey(0)  # Wait for any key press
+#     cv2.destroyAllWindows()
+#     # Get the encoded image
+            
+#     # Your existing code to generate the encoded image...
+#     _, buffer = cv2.imencode('.png', elementImage)
+#     encoded_image_bytes = base64.b64encode(buffer)
 # get_shortest_path(start_node='A',end_node='B')
     #  conn_average_x = []
     # conn_average_y = []
