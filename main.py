@@ -158,8 +158,8 @@ def get_graph():
     average_y = list(map(int, average_y))
     group_number = list(map(int, group_number))
 
-    for x, y, group in zip(average_x, average_y, group_number):
-        plt.text(y, x, f"{group}", color='red', fontsize=10)
+    # for x, y, group in zip(average_x, average_y, group_number):
+    #     plt.text(y, x, f"{group}", color='red', fontsize=10)
 
     # find connections between vertics
     
@@ -278,13 +278,13 @@ def get_graph():
         for item in value:
             new_value.update(item)
         new_data[key] = new_value
-    plt.imshow(elementImage)
-    plt.show()
+    # plt.imshow(elementImage)
+    # plt.show()
 
 
     return new_data, connections
 
-get_graph()
+# get_graph()
 def get_shortest_path_dijkstra(start_node, end_node, graph, paths):
     # image_path = 'final4.png'
     # height, width, elementImage = generate_heightmap(image_path)

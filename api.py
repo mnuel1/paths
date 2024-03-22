@@ -14,6 +14,9 @@ def get_data():
 
 @app.route('/api/get/map_graph')
 def map_graph():
+    # USE THIS FOR INITIALIZING THE MAP, AFTER IMPORTING
+    # CALL THIS
+    # STORE THE GRAPH AND CONNECTIONS TO STATE
     graph, connections = get_graph()
     response = {
         'graph': graph,  
@@ -25,15 +28,8 @@ def map_graph():
 @app.route('/api/get/shortest/path', methods=['GET'])
 def get_shortest_path():
     data = request.get_json()  # Get the JSON data from the request body
-    
-    # start_node STRING 
-    # end_node STRING
-
-    # graph JSON
-    # paths ARRAY
-  
-    shortest_path, shortest_distance, path = get_shortest_path_dijkstra(data.start_node, data.end_node, 
-                                                                        data.graph, data.paths)
+    shortest_path, shortest_distance, path = get_shortest_path_dijkstra(data['start_node'], data['end_node'], 
+                                                                        data['graph'], data['paths'])
     # Construct the response JSON
     response = {
         'data': {
