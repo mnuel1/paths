@@ -28,7 +28,7 @@ def is_corner(color, threshold=0.1, green=0.8, red=0.8):
 
 def dijkstra(graph, start, end):
     distances = {node: float('inf') for node in graph}
-    path_distances = [65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 46.5, 46.5, 46.5, 46.5]
+    path_distances = [65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 46.5, 46.5, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 46.5, 46.5, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 65.76, 46.5, 46.5, 46.5, 46.5, 46.5, 46.5]
     distances[start] = 0
     priority_queue = [(0, start)]
     previous_nodes = {}
@@ -65,7 +65,7 @@ def dijkstra(graph, start, end):
 
 
 def get_graph():
-    image_path = 'final4.png'
+    image_path = 'final.png'
 
     height, width, elementImage = generate_heightmap(image_path)
 
@@ -80,7 +80,7 @@ def get_graph():
             if is_path(elementsColor):
                 # This is an edge
                 edges.append((i, j))                    
-            elif is_obstacles(elementsColor):      
+            elif is_obstacles(elementsColor):
                 # This is an obstacle
                 pass        
             elif is_corner(elementsColor):
@@ -95,9 +95,7 @@ def get_graph():
     # sort the coordinates vertices for easier grouping vertex
     sorted_vertices = sorted(vertices, key=lambda vertex: (vertex[0]))
 
-    # list for the vertices (Group A, B, C, D and so on)
-    grouped_vertices = []
-    # Group vertices
+    grouped_vertices = []    
     current_group = []
 
     # loop to group the coordinates to get the vertices
@@ -115,19 +113,19 @@ def get_graph():
                         group_prev_vertex = group[-1]                                                 
                         if abs(vertex[0] - group_prev_vertex[0]) <= 1:                                                 
                             if vertex[1] != group_prev_vertex[1]:                                                                                    
-                                if vertex[1] - group_prev_vertex[1] <= 200:                                                                
+                                if vertex[1] - group_prev_vertex[1] <= 60:                                                                
                                     group.append(vertex)
                                 
                     grouped_vertices.append(current_group)            
                     current_group = [vertex]                                    
             elif vertex[0] != prev_vertex[0] and abs(vertex[0] - prev_vertex[0] <= 1):
-                if abs(vertex[1] - prev_vertex[1]) > 200:
+                if abs(vertex[1] - prev_vertex[1]) > 60:
                     
                     for group in grouped_vertices:
                         group_prev_vertex = group[-1]                                                 
                         if abs(vertex[0] - group_prev_vertex[0]) <= 1:                                                 
                             if vertex[1] != group_prev_vertex[1]:                                                                                    
-                                if abs(vertex[1] - group_prev_vertex[1]) <= 200:                                                                
+                                if abs(vertex[1] - group_prev_vertex[1]) <= 60:                                                                
                                     group.append(vertex)
                                     break
                 else:
@@ -157,9 +155,9 @@ def get_graph():
     average_x = list(map(int, average_x))
     average_y = list(map(int, average_y))
     group_number = list(map(int, group_number))
-
-    # for x, y, group in zip(average_x, average_y, group_number):
-    #     plt.text(y, x, f"{group}", color='red', fontsize=10)
+    letters = [chr(ord('A') + i) for i in range(26)]
+    for x, y, group in zip(average_x, average_y, group_number):
+        plt.text(y, x, f"{letters[group]}", color='red', fontsize=10)
 
     # find connections between vertics
     
@@ -173,17 +171,17 @@ def get_graph():
             connection = []  
 
             # checks right diagonal
-            if letters[i] == 'A' or letters[i] == 'B':
+            if letters[i] == 'A' or letters[i] == 'C' or letters[i] == 'E' or letters[i] == 'G':
                 diagonal_y = average_y[i]
                 for j in range(average_x[i] + 1, height):
                     connection.append([diagonal_y, j])            
                     for number in range(len(average_x)):                                
-                        if average_x[number] == j and abs(diagonal_y - average_y[number]) <= 400:                                                                                
-                                dist = index
-                                index += 1
-                                graph[letters[i]].append({letters[number]: dist})
-                                graph[letters[number]].append({letters[i]: dist})
-                                flag = 1       
+                        if average_x[number] == j and abs(diagonal_y - average_y[number]) <= 100:                                                                                
+                            dist = index
+                            index += 1
+                            graph[letters[i]].append({letters[number]: dist})
+                            graph[letters[number]].append({letters[i]: dist})
+                            flag = 1       
                         if flag : break
                     if flag : break 
                     diagonal_y += 1
@@ -195,18 +193,18 @@ def get_graph():
             flag = 0
 
             # checks left diagonal
-            if letters[i] == 'D':        
-                diagonal_y = average_y[i]
-                for j in range(average_x[i] - 1, 60, -1):
+            if letters[i] == 'I' or letters[i] == 'M' :        
+                diagonal_y = average_x[i]
+                for j in range(average_y[i] - 1, 20, -1):
+                    # print(j)
                     connection.append([j, diagonal_y])                     
-                    for number in range(len(average_x)):   
-                        if average_y[number] == j and abs(diagonal_y - average_x[number]) <= 400:
-                            if letters[i] == 'D':                                                
-                                dist = index
-                                index += 1
-                                graph[letters[i]].append({letters[number]: dist})
-                                graph[letters[number]].append({letters[i]: dist})
-                                flag = 1
+                    for number in range(len(average_y)):   
+                        if average_y[number] == j and abs(diagonal_y - average_x[number]) <= 100:                                                                     
+                            dist = index
+                            index += 1
+                            graph[letters[i]].append({letters[number]: dist})
+                            graph[letters[number]].append({letters[i]: dist})
+                            flag = 1
                         
                         if flag : break
                     if flag : break 
@@ -220,20 +218,21 @@ def get_graph():
             flag = 0
 
             # checks right 
-            for j in range(average_y[i] + 1, width):              
-                connection.append([j, average_x[i]])            
-                for number in range(len(average_x)):                                
-                    if average_y[number] == j and abs(average_x[i] - average_x[number]) <= 10:                        
-                        if letters[i] != 'C' and letters[number] != 'D':                                                
+            if letters[i] != 'D' and letters[i] != 'E' and letters[i] != 'F' and letters[i] != 'H' and letters[i] != 'L' and letters[i] != 'M' and letters[i] != 'N':
+                for j in range(average_y[i] + 1, width):              
+                    connection.append([j, average_x[i]])            
+                    for number in range(len(average_x)):                                
+                        if average_y[number] == j and abs(average_x[i] - average_x[number]) <= 100:      
+                            # if letters[i] != 'D' or letters[i] != 'E' or letters[i] != 'F':
                             dist = index
                             index += 1
                             graph[letters[i]].append({letters[number]: dist})
                             graph[letters[number]].append({letters[i]: dist})
-                            flag = 1
-                        else:
-                            connection = []
-                    if flag : break
-                if flag : break 
+                            # else:
+                            #     connection = []
+                            flag = 1                            
+                        if flag : break
+                    if flag : break 
             if flag == 0 : 
                 connection = [] 
             
@@ -243,19 +242,21 @@ def get_graph():
             flag = 0
 
             # check vertical connect
-            for j in range(average_x[i] + 1, height):            
-                for number in range(len(average_x)):
-                    connection.append([average_y[i], j])        
-                    if average_x[number] == j and abs(average_y[i] - average_y[number]) <= 10:
-                       
-                        dist = index
-                        index += 1
-                        graph[letters[i]].append({letters[number]: dist})
-                        graph[letters[number]].append({letters[i]: dist})
-                                        
-                        flag = 1
-                    if flag : break
-                if flag : break               
+            if letters[i] != 'B' and letters[i] != 'E' and letters[i] != 'G' and letters[i] != 'J' and letters[i] != 'M':            
+                for j in range(average_x[i] + 1, height):            
+                    for number in range(len(average_x)):
+                        connection.append([average_y[i], j])        
+                        if average_x[number] == j and abs(average_y[i] - average_y[number]) <= 10:
+                            
+                            dist = index
+                            index += 1
+                            graph[letters[i]].append({letters[number]: dist})
+                            graph[letters[number]].append({letters[i]: dist})
+                        
+                                            
+                            flag = 1
+                        if flag : break
+                    if flag : break               
             if flag == 0 : 
                 connection = [] 
                         
@@ -266,10 +267,6 @@ def get_graph():
         return connections, graph
 
     connections, graph = find_connections(average_x, average_y)
-    # for connection in connections:        
-    #     for node in connection:
-    #         elementImage[node[1], node[0]] = [0, 255, 0]  # Green color for edges
-
 
     # separate it properly
     new_data = {}
@@ -278,13 +275,10 @@ def get_graph():
         for item in value:
             new_value.update(item)
         new_data[key] = new_value
-    # plt.imshow(elementImage)
-    # plt.show()
-
-
+    
+   
     return new_data, connections
 
-# get_graph()
 def get_shortest_path_dijkstra(start_node, end_node, graph, paths):
     # image_path = 'final4.png'
     # height, width, elementImage = generate_heightmap(image_path)
@@ -302,6 +296,24 @@ def get_shortest_path_dijkstra(start_node, end_node, graph, paths):
     return shortest_path, shortest_distance, path
 
 
+    # for connection in connections:        
+    #     for node in connection:
+    #         elementImage[node[1], node[0]] = [0, 255, 0]  # Green color for edges
+
+
+ # start_node = 'A'
+    # end_node = 'P'
+    # shortest_distance, shortest_path, distances = dijkstra(new_data, start_node, end_node)
+    # # print(distances)
+    #  # Loop through indices specified in the distances list
+    # for idx in distances:
+    #     connected_groups = connections[idx]  # Assuming connections is defined somewhere
+    #     for connected_group in connected_groups:
+    #         elementImage[connected_group[1], connected_group[0]] = [255, 0, 0]  # Green color for edges
+
+    # plt.imshow(elementImage)
+    # plt.show()
+    # return None
 # new_data = {
 #             "A": { "B": 1, "C": 2, "D": 0},
 #             "B": { "A": 1, "D": 4, "E": 3 }, "C": { "A": 2, "F": 5 },
