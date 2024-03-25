@@ -1,9 +1,10 @@
 # app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-# import base64
+import base64
 from main import get_shortest_path_dijkstra
 from main import get_graph
+
 app = Flask(__name__)
 CORS(app, origins='http://localhost:5173')
 
@@ -12,17 +13,25 @@ def get_data():
     # Your code to process data and return a response
     return {'data': 'Your data here'}
 
-@app.route('/api/get/map_graph')
+@app.route('/api/get/map_graph', methods=['POST'])
 def map_graph():
     # USE THIS FOR INITIALIZING THE MAP, AFTER IMPORTING
     # CALL THIS
     # STORE THE GRAPH AND CONNECTIONS TO STATE
-    graph, connections = get_graph()
-    response = {
-        'graph': graph,  
-        'paths': connections
-    }
-    return jsonify(message='Map Initialization Complete', data=response), 200
+    data = request.get_json()
+    if 'base64_image' in data:
+        base64_image = data['base64_image']
+
+        binary_data = base64.b64decode(base64_image)
+
+        graph, connections = get_graph(binary_data)
+        response = {
+            'graph': graph,  
+            'paths': connections
+        }
+        return jsonify(message='Map Initialization Complete', data=response), 200
+    else:
+        return jsonify(message='Base64 image data not found in request'), 400
 
 
 @app.route('/api/get/shortest/path', methods=['GET'])
@@ -40,5 +49,8 @@ def get_shortest_path():
     }
 
     return jsonify(message='Success', data=response), 200
+
 if __name__ == '__main__':
     app.run(host='localhost', port=5000)
+
+
