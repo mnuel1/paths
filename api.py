@@ -39,6 +39,10 @@ def get_shortest_path():
     data = request.get_json()  # Get the JSON data from the request body
     shortest_path, shortest_distance, path = get_shortest_path_dijkstra(data['start_node'], data['end_node'], 
                                                                         data['graph'], data['paths'])
+    
+    if not shortest_path:
+        return jsonify(message='No path found!'), 200
+    
     # Construct the response JSON
     response = {
         'data': {
