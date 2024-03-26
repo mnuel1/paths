@@ -237,7 +237,7 @@ def get_graph(obs_base64):
     # plt.imshow(obs_base64)
     # plt.show()
     return graph, connections
-get_graph()
+# get_graph()
 def get_shortest_path_dijkstra(start_node, end_node, graph, paths):
     # image_path = 'final4.png'
     # height, width, elementImage = generate_heightmap(image_path)
