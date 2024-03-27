@@ -1,109 +1,120 @@
-def dijkstra(vertices, start):
-    distances = {vertex: float('inf') for vertex in vertices}
+import numpy as np
+import cv2
+import open3d as o3d
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+from queue import PriorityQueue
+
+def generate_heightmap(image_path, scale_factor=10):
+    # Load the image
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+    # Get dimensions of the image
+    height, width, _ = img.shape
+
+    # Scale the z-coordinate based on image intensity
+    z = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) / 255 * scale_factor
+
+    return z, img
+
+def is_user(color, threshold=0.1, red=0.9):  
+    r, g, b = color    
+    return r > red and g < threshold and b < threshold
+
+def is_door(color, threshold=0.1, green=0.9):  
+    r, g, b = color    
+    return r < threshold and g > green and b < threshold
+
+def is_obstacles(color, threshold=0.1,blue=0.9): 
+    r, g, b = color
+    return r < threshold and g < threshold and b > blue
+
+def is_path(color, threshold=0.1): 
+    r, g, b = color
+    return r < threshold and g < threshold and b < threshold
+def is_corner(color, threshold=0.1, green=0.8,blue=0.9):   
+    r, g, b = color
+    return r < threshold and g > green and b > blue
+# Perform Dijkstra's algorithm to find the shortest path
+def dijkstra(graph, start, end):
+    queue = PriorityQueue()
+    queue.put((0, start))
+    distances = {node: float('inf') for node in graph}
     distances[start] = 0
-    previous_vertices = {vertex: None for vertex in vertices}
-    visited = set()
+    path = {}
 
-    priority_queue = [(0, start)]
+    while not queue.empty():
+        current_distance, current_node = queue.get()
 
-    while priority_queue:
-        current_distance, current_vertex = heapq.heappop(priority_queue)
+        if current_node == end:
+            break
 
-        if current_vertex in visited:
-            continue
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                queue.put((distance, neighbor))
+                path[neighbor] = current_node
 
-        visited.add(current_vertex)
+    shortest_path = []
+    current_node = end
+    while current_node != start:
+        shortest_path.append(current_node)
+        current_node = path[current_node]
+    shortest_path.append(start)
+    shortest_path.reverse()
 
-        for neighbor, distance in vertices[current_vertex].items():
-            if neighbor in visited:
-                continue
-            new_distance = current_distance + distance
-            if new_distance < distances[neighbor]:
-                distances[neighbor] = new_distance
-                previous_vertices[neighbor] = current_vertex
-                heapq.heappush(priority_queue, (new_distance, neighbor))
+    return shortest_path
 
-    return distances, previous_vertices
+# Example usage
+image_path = 'final.png'
+# original_image ='final.png'
+z, elementImage = generate_heightmap(image_path)
+# original_img = cv2.imread(original_image, cv2.IMREAD_COLOR)
 
-def shortest_path(vertices, start, end):
-    distances, previous_vertices = dijkstra(vertices, start)
-    path = []
-    current_vertex = end
-    while current_vertex is not None:
-        path.append(current_vertex)
-        current_vertex = previous_vertices[current_vertex]
-    path.reverse()
-    return distances[end], path
+# path_color = np.array([0, 0, 0])  # Black color for path
+# bg_color = np.array([1, 1, 1])
+graph = {}
 
+# Create a point cloud
+points = []
+colors = []
 
-def save_vertices_to_file(vertices, filename):
-    vertices_str_keys = {}
-    for key, value in vertices.items():
-        neighbor_dict = {}
-        for neighbor, distance in value.items():
-            neighbor_str = str(neighbor)
-            neighbor_dict[neighbor_str] = distance
-        key_str = str(key)
-        vertices_str_keys[key_str] = neighbor_dict
-    
-    with open(filename, 'w') as file:
-        json.dump(vertices_str_keys, file, indent=4)
-def connect_edges_to_neighbors(height, width, elementImage):
-    vertices = {}
-    
-    # Trace the color and identify vertices, edges and obstacles
-    for i in range(width):
-        for j in range(height):
-            elementsColor = elementImage[i, j] / 255
+# Trace the color and create points and colors
+for i in range(z.shape[0]):
+    for j in range(z.shape[1]):
+        # for path and door 
+        elementsColor = elementImage[i, j] / 255
+        # for users and general
+        # color = original_img[i, j] / 255
 
-            if is_path(elementsColor):
-                # This is an edge
-                neighbors = []
-                # Check 8-connected neighbors
-                for dx in [-1, 0, 1]:
-                    for dy in [-1, 0, 1]:
-                        if dx == 0 and dy == 0:
-                            continue
-                        x, y = i + dx, j + dy
-                        if 0 <= x < width and 0 <= y < height:
-                            if is_path(elementImage[x, y] / 255):
-                                neighbors.append((x, y))
-                vertices[(i, j)] = {neighbor: 1 for neighbor in neighbors}
-    
-    return vertices
+        if is_path(elementsColor):
+            points.append([i, j, z[i, j]])
+            colors.append(elementsColor)            
+        elif is_obstacles(elementsColor):      
+            points.append([i, j, z[i, j]])
+            colors.append(elementsColor)       
+        elif is_corner(elementsColor):
+            points.append([i, j, z[i, j]])
+            colors.append(elementsColor)  
+        elif is_door(elementsColor):
+            points.append([i, j, z[i, j]])
+            colors.append(elementsColor)
+        elif is_user(elementsColor): 
+            points.append([i, j, z[i, j]])
+            colors.append(elementsColor)
+        else: 
+            points.append([i, j, z[i, j]])
+            colors.append(elementsColor)
 
+# Convert lists to NumPy arrays
+points = np.array(points)
+colors = np.array(colors)
+np.savetxt('points_3d.txt', points, fmt='%f')
+# Create point cloud
+point_cloud = o3d.geometry.PointCloud()
+point_cloud.points = o3d.utility.Vector3dVector(points)
+point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
-# get graph
- # def save_vertices_to_txt(vertices, filename):
-    #     with open(filename, 'w') as file:
-    #         for key, value in vertices.items():
-    #             file.write(f"Vertex: {key}\n")
-    #             file.write("Neighbors:\n")
-    #             for neighbor, distance in value.items():
-    #                 file.write(f"    {neighbor}: {distance}\n")
-    #             file.write("\n")
-
-    # Example usage:
-    vertices = connect_edges_to_neighbors(height, width, elementImage)
-    vertices_str_keys = {}
-    for key, value in vertices.items():
-        neighbor_dict = {}
-        for neighbor, distance in value.items():
-            neighbor_str = str(neighbor)
-            neighbor_dict[neighbor_str] = distance
-        key_str = str(key)
-        vertices_str_keys[key_str] = neighbor_dict
-    # save_vertices_to_txt(vertices, 'vertices.txt')
-    start_vertex = "(15, 15)"
-    end_vertex = "(421, 255)"
-    shortest_distance, path = shortest_path(vertices_str_keys, start_vertex, end_vertex)
-    print("Shortest distance:", shortest_distance)
-    print("Shortest path:", path)
-    shortest_path_coordinates = [(int(vertex.strip('()').split(', ')[0]), int(vertex.strip('()').split(', ')[1])) for vertex in path]    
-    for path in shortest_path_coordinates:
-        elementImage[path] = [0, 255, 0]  # Green color for edges 
-    # # Save vertices to a JSON file
-    # save_vertices_to_file(vertices, 'vertices.json')
-    # # Visualize the result
-    plt.imshow(elementImage)
-    plt.show()
+# Show the point cloud and start interactive editing
+o3d.visualization.draw_geometries_with_editing([point_cloud])   

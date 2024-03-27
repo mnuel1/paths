@@ -19,15 +19,15 @@ def map_graph():
     # CALL THIS
     # STORE THE GRAPH AND CONNECTIONS TO STATE
     data = request.get_json()
-    if 'base64_image' in data:
-        base64_image = data['base64_image']
+    if 'base64EncodedMap' in data:
+        base64_image = data['base64EncodedMap']
 
         binary_data = base64.b64decode(base64_image)
 
-        graph, connections = get_graph(binary_data)
+        graph, obs_array = get_graph(binary_data)
         response = {
-            'graph': graph,  
-            'paths': connections
+            'graph': graph,
+            'blockedEdges': obs_array
         }
         return jsonify(message='Map Initialization Complete', data=response), 200
     else:
@@ -37,18 +37,16 @@ def map_graph():
 @app.route('/api/get/shortest/path', methods=['GET'])
 def get_shortest_path():
     data = request.get_json()  # Get the JSON data from the request body
-    shortest_path, shortest_distance, path = get_shortest_path_dijkstra(data['start_node'], data['end_node'], 
-                                                                        data['graph'], data['paths'])
-    
+    shortest_path, shortest_distance = get_shortest_path_dijkstra(data['startNode'], data['targetNode'], 
+                                                                data['graph'])    
     if not shortest_path:
         return jsonify(message='No path found!'), 200
     
     # Construct the response JSON
     response = {
         'data': {
-            'shortest_path': shortest_path,
-            'shortest_distance': shortest_distance,
-            'path': path
+            'path': shortest_path,
+            'safestAndShortestPathDistance': shortest_distance,            
         }
     }
 
