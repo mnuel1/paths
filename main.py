@@ -171,9 +171,9 @@ def image_to_base64(image_path):
 def get_graph(obs_base64):
     
     image_path = 'final.png'
-    binary_data = base64.b64decode(obs_base64)
+    # binary_data = base64.b64decode(obs_base64)
 
-    height, width, map_semantics, obs_element = cv2_process_image(image_path, binary_data)
+    height, width, map_semantics, obs_element = cv2_process_image(image_path, obs_base64)
  
     vertices = []    
     obstacles = []

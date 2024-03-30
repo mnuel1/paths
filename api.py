@@ -23,7 +23,7 @@ def map_graph():
         base64_image = data['base64EncodedMap']
 
         binary_data = base64.b64decode(base64_image)
-
+        # print(binary_data)
         graph, obs_array = get_graph(binary_data)
         response = {
             'graph': graph,
@@ -43,11 +43,9 @@ def get_shortest_path():
         return jsonify(message='No path found!'), 200
     
     # Construct the response JSON
-    response = {
-        'data': {
-            'path': shortest_path,
-            'safestAndShortestPathDistance': shortest_distance,            
-        }
+    response = {        
+        'path': shortest_path,
+        'safestAndShortestPathDistance': shortest_distance,            
     }
 
     return jsonify(message='Success', data=response), 200
