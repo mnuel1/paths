@@ -3,7 +3,8 @@ import cv2
 import base64
 import matplotlib.pyplot as plt
 import heapq
-
+path_distances = [32.88, 23.25, 23.25, 23.25, 32.88, 23.25, 23.25, 32.88, 23.25, 32.88, 23.25, 32.88, 23.25, 
+                      23.25, 23.25, 23.25, 23.25, 32.88, 23.25, 23.25, 23.25, 23.25, 23.25, 23.25]
 def cv2_process_image(image_path, binary_data):
     # Load the image
     img = cv2.imread(image_path)
@@ -27,8 +28,7 @@ def is_corner(color, threshold=0.1, green=0.8, red=0.8):
 
 def dijkstra(graph, start, end):
     distances = {node: float('inf') for node in graph}
-    path_distances = [32.88, 23.25, 23.25, 23.25, 32.88, 23.25, 23.25, 32.88, 23.25, 32.88, 23.25, 32.88, 23.25, 
-                      23.25, 23.25, 23.25, 23.25, 32.88, 23.25, 23.25, 23.25, 23.25, 23.25, 23.25]
+    
     distances[start] = 0
     priority_queue = [(0, start)]
     previous_nodes = {}
@@ -50,14 +50,30 @@ def dijkstra(graph, start, end):
 
         for neighbor, weight in graph[current_node].items():
             distance = current_distance + path_distances[weight]
-            print(distance)
             if distance < distances[neighbor]:
-                print(weight)
                 distances[neighbor] = distance                
                 previous_nodes[neighbor] = current_node
                 heapq.heappush(priority_queue, (distance, neighbor))
 
     return float('inf'), None
+def dfs_paths(graph, start, end, path=[], distance=0, path_distances=[], visited=set()):
+    path = path + [start]
+    visited.add(start)
+
+    if len(path) > 1:
+        distance += path_distances[graph[path[-2]][start]]
+
+    if start == end:
+        return [(path, distance)]
+
+    paths = []
+    for neighbor in graph[start]:
+        if neighbor not in visited:
+            new_paths = dfs_paths(graph, neighbor, end, path, distance, path_distances, visited.copy())
+            for new_path in new_paths:
+                paths.append(new_path)
+
+    return paths
 
 def check_right_diagonal(i, average_coordinate, letters, graph, index, length, size, obstacles, obs_array) :
     diagonal_y = average_coordinate[i][1]    
@@ -168,12 +184,14 @@ def image_to_base64(image_path):
         base64_encoded = base64.b64encode(image_data).decode("utf-8")
     return base64_encoded
 
-def get_graph(obs_base64):
+def get_graph(obs_64):
     
+    # obs_base64 = image_to_base64('final.png')
     image_path = 'final.png'
     # binary_data = base64.b64decode(obs_base64)
 
-    height, width, map_semantics, obs_element = cv2_process_image(image_path, obs_base64)
+    height, width, map_semantics, obs_element = cv2_process_image(image_path, obs_64)
+    # height, width, map_semantics, obs_element = cv2_process_image(image_path, binary_data)
  
     vertices = []    
     obstacles = []
@@ -241,26 +259,20 @@ def get_graph(obs_base64):
  
     letters = [chr(ord('A') + i) for i in range(26)]
 
-    # for index, (x, y) in enumerate(average_coordinate):
-    #     plt.text(y, x, f"{letters[index]}", color='red', fontsize=10)
+    for index, (x, y) in enumerate(average_coordinate):
+        plt.text(y, x, f"{letters[index]}", color='red', fontsize=10)
         
     graph, obs_array = find_connections(average_coordinate, letters, obstacles, size=height)
     # print(graph, obs_array)
-    # plt.imshow(obs_base64)
-    # plt.show()
-    return graph, obs_array
-# get_graph()
-
-def get_shortest_path_dijkstra(start_node, end_node, graph):
-    # image_path = 'final.png'
-    # obs_base64 = image_to_base64('obs.png')
-    # binary_data = base64.b64decode(obs_base64)
-    # height, width, elementImage, obs_element = cv2_process_image(image_path, binary_data)
-    shortest_distance, shortest_path = dijkstra(graph, start_node, end_node)
-    
-    # print(shortest_distance, shortest_path)
-
     # plt.imshow(obs_element)
     # plt.show()
-    return shortest_path, shortest_distance
+    return graph, obs_array
+
+def get_shortest_path_dijkstra(start_node, end_node, graph):
+    
+    shortest_distance, shortest_path = dijkstra(graph, start_node, end_node)
+       
+    other_paths_with_distances = dfs_paths(graph, start_node, end_node, path_distances=path_distances)
+    
+    return shortest_path, shortest_distance, other_paths_with_distances
 

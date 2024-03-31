@@ -34,18 +34,24 @@ def map_graph():
         return jsonify(message='Base64 image data not found in request'), 400
 
 
-@app.route('/api/get/shortest/path', methods=['GET'])
+@app.route('/api/get/shortest/path', methods=['POST'])
 def get_shortest_path():
     data = request.get_json()  # Get the JSON data from the request body
-    shortest_path, shortest_distance = get_shortest_path_dijkstra(data['startNode'], data['targetNode'], 
-                                                                data['graph'])    
+    print(data['startNode'], request.get_json())
+    shortest_path, shortest_distance, other_paths_with_distances = \
+        get_shortest_path_dijkstra(data['startNode'], data['targetNode'], 
+            data['graph'])    
+    
     if not shortest_path:
         return jsonify(message='No path found!'), 200
     
     # Construct the response JSON
     response = {        
         'path': shortest_path,
-        'safestAndShortestPathDistance': shortest_distance,            
+        'safestAndShortestPathDistance': shortest_distance,
+        'otherPathWithDistances': {
+            other_paths_with_distances
+        }
     }
 
     return jsonify(message='Success', data=response), 200
